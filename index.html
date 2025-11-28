@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ROG Ally Controller</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --rog-white: #f0f0f0;
+      --rog-dark: #1a1a1a;
+      --rog-purple: #b026ff;
+      --rog-blue: #00e1ff;
+      --led-glow: 0 0 15px var(--rog-purple);
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none; /* Important for joystick */
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
+      font-family: 'Rajdhani', sans-serif;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* MAIN CONSOLE BODY (White ROG Ally style) */
+    .console-body {
+      width: 95%;
+      max-width: 900px;
+      aspect-ratio: 21 / 9;
+      background: var(--rog-white);
+      border-radius: 40px;
+      display: flex;
+      position: relative;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 -5px 20px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    
+    /* Textured Grip Areas */
+    .console-body::before, .console-body::after {
+      content: '';
+      position: absolute;
+      top: 20%; bottom: 20%;
+      width: 30px;
+      background: repeating-linear-gradient(45deg, #e0e0e0, #e0e0e0 1px, transparent 1px, transparent 4px);
+      opacity: 0.5;
+      z-index: 0;
+    }
+    .console-body::before { left: 10px; }
+    .console-body::after { right: 10px; }
+
+    /* CONTROLLER SIDES */
+    .controller-side {
+      width: 22%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* JOYSTICKS (RGB RINGS) */
+    .joystick-base {
+      width: 70px;
+      height: 70px;
+      background: #222;
+      border-radius: 50%;
+      position: relative;
+      box-shadow: inset 0 5px 10px rgba(0,0,0,0.8), 0 0 0 2px #333, var(--led-glow);
+      margin: 15px 0;
+    }
+
+    .stick-handle {
+      width: 50px;
+      height: 50px;
+      background: radial-gradient(circle at 30% 30%, #444, #111);
+      border-radius: 50%;
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+      border: 1px solid #333;
+      cursor: pointer;
+      /* Initial state */
+      transition: transform 0.1s ease-out; 
+    }
+    
+    .stick-handle::after {
+        content: '';
+        position: absolute;
+        top: 5px; left: 5px; right: 5px; bottom: 5px;
+        border-radius: 50%;
+        background: repeating-conic-gradient(#222 0% 25%, #1a1a1a 25% 50%);
+        opacity: 0.8;
+    }
+
+    /* D-PAD */
+    .dpad {
+      width: 90px; height: 90px;
+      position: relative;
+      background: #222;
+      border-radius: 50%;
+      margin-top: 10px;
+    }
+    .dpad-btn {
+      position: absolute;
+      background: #333;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+    }
+    .dpad-btn:active { background: #555; color: #fff; }
+    
+    /* Cross shape D-Pad */
+    .d-up { top: 5px; left: 30px; width: 30px; height: 30px; border-radius: 5px 5px 0 0; }
+    .d-down { bottom: 5px; left: 30px; width: 30px; height: 30px; border-radius: 0 0 5px 5px; }
+    .d-left { top: 30px; left: 5px; width: 30px; height: 30px; border-radius: 5px 0 0 5px; }
+    .d-right { top: 30px; right: 5px; width: 30px; height: 30px; border-radius: 0 5px 5px 0; }
+    .d-center { top: 30px; left: 30px; width: 30px; height: 30px; background: #2a2a2a; }
+
+    /* ABXY BUTTONS */
+    .abxy-group {
+      width: 100px; height: 100px;
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .face-btn {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(0,0,0,0.1);
+      color: #333;
+      font-weight: bold;
+      position: absolute;
+      box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+    }
+    .face-btn:active { transform: scale(0.95); background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    
+    /* ABXY Layout */
+    .btn-y { top: 0; left: 35px; color: #ffcc00; } /* Yellow Y */
+    .btn-x { top: 35px; left: 0; color: #00ccff; } /* Blue X */
+    .btn-b { top: 35px; right: 0; color: #ff3333; } /* Red B */
+    .btn-a { bottom: 0; left: 35px; color: #33cc33; } /* Green A */
+
+    /* SCREEN AREA */
+    .screen-bezel {
+      flex: 1;
+      background: #000;
+      margin: 15px 5px;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+      border: 2px solid #111;
+    }
+
+    #cam {
+      flex: 1;
+      width: 100%;
+      object-fit: cover;
+    }
+    
+    /* BOTTOM STATUS PANEL (Requirement 4) */
+    .status-panel {
+        height: 30px;
+        background: rgba(10,10,10,0.9);
+        border-top: 1px solid #333;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 15px;
+        font-size: 10px;
+        color: #aaa;
+        font-family: monospace;
+    }
+    
+    .status-item { display: flex; gap: 5px; align-items: center; }
+    .status-val { color: var(--rog-blue); font-weight: bold; }
+    .warn-val { color: #ff3333; }
+
+    /* UI OVERLAY */
+    .ui-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px;
+    }
+    
+    .top-bar {
+        display: flex; justify-content: space-between;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+        padding: 5px 10px;
+        border-radius: 5px;
+        color: #fff;
+        font-size: 12px;
+    }
+
+    .touch-controls {
+        display: flex; justify-content: center; gap: 10px;
+        pointer-events: auto;
+        margin-bottom: 40px; /* Space for status panel */
+    }
+    
+    .glass-btn {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        cursor: pointer;
+        text-transform: uppercase;
+    }
+    .glass-btn:hover { background: rgba(255,255,255,0.2); }
+
+    /* TOAST NOTIFICATION (Requirement 3) */
+    #toast {
+        position: absolute;
+        top: 20%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.85);
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid var(--rog-blue);
+        font-size: 14px;
+        z-index: 100;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+
+    /* EXTRA BUTTONS (Start/Select) */
+    .option-btn {
+        position: absolute;
+        top: 20px;
+        width: 0; height: 0;
+        border-style: solid;
+        cursor: pointer;
+    }
+    .btn-view { 
+        left: 10px; 
+        border-width: 8px 12px 8px 0; 
+        border-color: transparent #999 transparent transparent;
+    }
+    .btn-menu { 
+        right: 10px; 
+        border-width: 8px 0 8px 12px; 
+        border-color: transparent transparent transparent #999;
+    }
+    
+    /* ROG SPEAKERS */
+    .speaker-grill {
+        position: absolute;
+        bottom: 40px;
+        width: 60px;
+        height: 20px;
+        background: radial-gradient(circle, #000 1px, transparent 1px);
+        background-size: 3px 3px;
+        opacity: 0.3;
+    }
+    .left .speaker-grill { left: 10px; transform: rotate(-15deg); }
+    .right .speaker-grill { right: 10px; transform: rotate(15deg); }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) and (orientation: portrait) {
+      body { overflow-y: auto; height: auto; display: block; }
+      .console-body {
+        flex-direction: column;
+        width: 100%; height: auto;
+        border-radius: 0;
+        aspect-ratio: auto;
+        background: #111;
+      }
+      .controller-side {
+        width: 100%;
+        height: 200px;
+        flex-direction: row;
+        justify-content: space-around;
+        background: var(--rog-white);
+        padding: 10px;
+      }
+      .controller-side.left { border-radius: 0 0 20px 20px; order: 2; }
+      .controller-side.right { border-radius: 20px 20px 0 0; order: 3; }
+      .screen-bezel { order: 1; height: 50vh; margin: 0; border-radius: 0; }
+      .speaker-grill { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="console-body">
+    
+    <!-- LEFT CONTROLLER -->
+    <div class="controller-side left">
+      <div class="option-btn btn-view" title="View"></div>
+      
+      <!-- Left Joystick (Movement) -->
+      <div class="joystick-base" id="joy-left-base" style="width:100px; height:100px;">
+        <div class="stick-handle" id="joy-left" style="width:70px; height:70px;"></div>
+      </div>
+
+      <!-- D-Pad (Extra - Removed per user request for cleaner look) -->
+      <!-- 
+      <div class="dpad">
+        ...
+      </div> 
+      -->
+      
+      <div class="speaker-grill"></div>
+    </div>
+
+    <!-- SCREEN AREA -->
+    <div class="screen-bezel">
+      <!-- Camera Stream -->
+      <img id="cam" src="/video" alt="Đang kết nối..." onerror="this.src='https://via.placeholder.com/800x450/000/fff?text=MẤT+TÍN+HIỆU'">
+      
+      <!-- UI Overlay -->
+      <div class="ui-overlay">
+        <div class="top-bar">
+             <div style="display:flex; gap:10px; align-items:center;">
+                 <span>FPS: 30</span>
+                 <span>PIN: 98%</span>
+             </div>
+             <div style="display:flex; gap:15px; align-items:center;">
+                <!-- Speed Controls (Req 1) -->
+                <div class="speed-control">
+                    <span class="spd-label">TAY:</span>
+                    <input type="range" id="speed-man" min="20" max="100" value="50" oninput="updateSpeed('man', this.value)">
+                    <span id="val-man" class="spd-val">50%</span>
+                </div>
+                <div class="speed-control">
+                    <span class="spd-label">TỰ ĐỘNG:</span>
+                    <input type="range" id="speed-auto" min="20" max="100" value="40" onchange="updateSpeed('auto', this.value)">
+                    <span id="val-auto" class="spd-val">40%</span>
+                </div>
+                <div style="color:#ff3333; font-weight:bold; animation: pulse 2s infinite;">GHI ●</div>
+             </div>
+        </div>
+        
+        <!-- Toast Notification -->
+        <div id="toast">THÔNG BÁO</div>
+
+        <!-- Touch Controls -->
+        <div class="touch-controls">
+            <button class="glass-btn" onclick="doSnapshot()">CHỤP</button>
+            <button class="glass-btn" onclick="openGallery()">THƯ VIỆN</button>
+            <button class="glass-btn" id="btn-auto-toggle" onclick="toggleAuto()">AUTO: TẮT</button>
+        </div>
+      </div>
+
+      <!-- Bottom Status Panel -->
+      <div class="status-panel">
+        <div class="status-item">ĐỘNG CƠ: <span id="st-motor" class="status-val">DỪNG</span></div>
+        <div class="status-item">CAMERA: <span id="st-servo" class="status-val">GIỮA</span></div>
+        <div class="status-item">CẢM BIẾN: <span id="st-sens" class="status-val warn-val">TRỐNG</span></div>
+        <div class="status-item">THÔNG BÁO: <span id="st-event" class="status-val" style="color:#fbbf24;">CHỜ...</span></div>
+      </div>
+    </div>
+
+    <!-- Gallery Modal (Req 2) -->
+    <div id="gallery-modal" class="modal-overlay">
+        <div class="gallery-window">
+            <div class="gallery-header">
+                <span>THƯ VIỆN ẢNH</span>
+                <button class="close-btn" onclick="closeGallery()">×</button>
+            </div>
+            <div class="gallery-viewport">
+                <img id="gallery-img" src="" alt="Không có ảnh">
+                <div class="gallery-counter" id="gallery-count">0/0</div>
+            </div>
+            <div class="gallery-actions">
+                <button class="g-btn" onclick="navGallery(-1)">◀</button>
+                <button class="g-btn btn-del" onclick="deleteImage()">XÓA</button>
+                <button class="g-btn btn-send" onclick="sendImage()">GỬI TG</button>
+                <button class="g-btn" onclick="navGallery(1)">▶</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT CONTROLLER -->
+    <div class="controller-side right">
+      <div class="option-btn btn-menu" title="Menu"></div>
+
+      <!-- ABXY Buttons (Servo) -->
+      <div class="abxy-group">
+         <button class="face-btn btn-y" onclick="sendServo(-1,0)">Y</button>
+         <button class="face-btn btn-x" onclick="sendServo(0,-1)">X</button>
+         <button class="face-btn btn-b" onclick="sendServo(1,0)">B</button>
+         <button class="face-btn btn-a" onclick="sendServo(0,1)">A</button>
+      </div>
+
+      <!-- Right Joystick (Dummy/Servo) -->
+      <div class="joystick-base">
+         <div class="stick-handle" onclick="sendServo(0,0)" title="Đặt lại Camera"></div>
+      </div>
+      
+      <div class="speaker-grill"></div>
+    </div>
+
+
+  </div>
+
+  <style>
+    /* New Styles for Sliders & Gallery */
+    .speed-control {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(0,0,0,0.5);
+        padding: 2px 8px;
+        border-radius: 10px;
+        pointer-events: auto;
+    }
+    .spd-label { font-size: 10px; color: #aaa; }
+    .spd-val { font-size: 10px; color: var(--rog-blue); width: 25px; text-align: right;}
+    
+    input[type=range] {
+        width: 60px;
+        height: 4px;
+        appearance: none;
+        -webkit-appearance: none;
+        background: #555;
+        border-radius: 2px;
+        outline: none;
+        pointer-events: auto;
+        cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 12px; height: 12px;
+        background: #fff;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 0 5px var(--rog-blue);
+    }
+    input[type=range]::-moz-range-thumb {
+        width: 12px; height: 12px;
+        background: #fff;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 0 5px var(--rog-blue);
+        border: none;
+    }
+    input[type=range]::-moz-range-track {
+        background: #555;
+        border: none;
+    }
+
+    /* Gallery Modal Styles */
+    .modal-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8);
+        backdrop-filter: blur(5px);
+        z-index: 200;
+        display: none; /* Hidden by default */
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .gallery-window {
+        width: 90%; height: 90%;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    }
+    
+    .gallery-header {
+        padding: 10px 15px;
+        border-bottom: 1px solid #333;
+        display: flex; justify-content: space-between; align-items: center;
+        color: #fff; font-weight: bold;
+    }
+    
+    .close-btn {
+        background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer;
+    }
+    .close-btn:hover { color: #fff; }
+    
+    .gallery-viewport {
+        flex: 1;
+        background: #000;
+        position: relative;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden;
+    }
+    
+    #gallery-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    
+    .gallery-counter {
+        position: absolute; top: 10px; right: 10px;
+        background: rgba(0,0,0,0.6); color: #fff;
+        padding: 2px 6px; border-radius: 4px; font-size: 10px;
+    }
+    
+    .gallery-actions {
+        padding: 10px;
+        display: flex; justify-content: center; gap: 10px;
+        background: #222;
+        border-radius: 0 0 10px 10px;
+    }
+    
+    .g-btn {
+        background: #333; color: #fff; border: none;
+        padding: 8px 16px; border-radius: 5px;
+        cursor: pointer; font-family: 'Rajdhani'; font-weight: bold;
+    }
+    .g-btn:hover { background: #444; }
+    .btn-del { background: #552222; color: #ff9999; }
+    .btn-send { background: #225522; color: #99ff99; }
+  </style>
+
+  <script>
+    // STATE
+    let motorSpeed = 50;
+    let autoSpeed = 40;
+    let isAuto = false;
+    let activeTouchId = null;
+    
+    // GALLERY STATE
+    let galleryImages = [];
+    let curImgIdx = -1;
+
+    // --- JOYSTICK LOGIC (Requirement 2) ---
+    const joyBase = document.getElementById('joy-left-base');
+    const joyStick = document.getElementById('joy-left');
+    
+    // Center coordinates
+    let centerX, centerY;
+    let maxDist = 35; // Max pixel distance stick moves
+    let updateInterval = null;
+
+    function handleStart(clientX, clientY) {
+        const rect = joyBase.getBoundingClientRect();
+        centerX = rect.left + rect.width / 2;
+        centerY = rect.top + rect.height / 2;
+        updateJoystick(clientX, clientY);
+        
+        // Start sending commands loop
+        if(!updateInterval) updateInterval = setInterval(sendJoystickCommand, 100); // 10Hz updates
+    }
+
+    function handleMove(clientX, clientY) {
+        updateJoystick(clientX, clientY);
+    }
+
+    function handleEnd() {
+        joyStick.style.transform = `translate(-50%, -50%)`; // Reset visual
+        if(updateInterval) {
+            clearInterval(updateInterval);
+            updateInterval = null;
+        }
+        sendMotorCmd('stop');
+    }
+
+    function updateJoystick(clientX, clientY) {
+        let dx = clientX - centerX;
+        let dy = clientY - centerY;
+        
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        // Limit movement
+        if (dist > maxDist) {
+            const ratio = maxDist / dist;
+            dx *= ratio;
+            dy *= ratio;
+        }
+        
+        joyStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+        
+        // Store current vector for command loop
+        window.joyVector = { x: dx, y: dy };
+    }
+
+    function sendJoystickCommand() {
+        if(!window.joyVector) return;
+        const { x, y } = window.joyVector;
+        const threshold = 10; // Deadzone
+        
+        let cmd = '';
+        
+        // Simple logic: Convert analog vector to discrete command
+        // Prioritize Forward/Backward over turns if dominant
+        if (Math.abs(y) > Math.abs(x)) {
+            if (y < -threshold) cmd = 'forward';
+            else if (y > threshold) cmd = 'backward';
+        } else {
+            if (x < -threshold) cmd = 'turnleft';
+            else if (x > threshold) cmd = 'turnright';
+        }
+        
+        if (cmd) sendMotorCmd(cmd);
+        else sendMotorCmd('stop'); // Deadzone = stop
+    }
+
+    // Event Listeners for Joystick
+    joyStick.addEventListener('mousedown', e => {
+        activeTouchId = 'mouse';
+        handleStart(e.clientX, e.clientY);
+        
+        const onMove = e => { if(activeTouchId === 'mouse') handleMove(e.clientX, e.clientY); };
+        const onUp = () => { 
+            if(activeTouchId === 'mouse') {
+                handleEnd();
+                activeTouchId = null;
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+            }
+        };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+    });
+
+    joyStick.addEventListener('touchstart', e => {
+        e.preventDefault();
+        const touch = e.changedTouches[0];
+        activeTouchId = touch.identifier;
+        handleStart(touch.clientX, touch.clientY);
+    }, {passive: false});
+
+    joyStick.addEventListener('touchmove', e => {
+        e.preventDefault(); // Prevent scroll
+        for (let i=0; i<e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === activeTouchId) {
+                handleMove(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+            }
+        }
+    }, {passive: false});
+
+    joyStick.addEventListener('touchend', e => {
+        e.preventDefault();
+        for (let i=0; i<e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === activeTouchId) {
+                handleEnd();
+                activeTouchId = null;
+            }
+        }
+    });
+
+
+    // --- TOAST & ACTIONS (Requirement 3) ---
+    function showToast(msg, duration=1000) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.opacity = 1;
+        setTimeout(() => { t.style.opacity = 0; }, duration);
+    }
+
+    // --- SENSOR MOCK (Req 4) ---
+    setInterval(() => {
+        const dist = (Math.random() * 100).toFixed(0);
+        const st = document.getElementById('st-sens');
+        if (dist < 20) {
+            st.innerText = `CẢNH BÁO < ${dist}cm`;
+            st.className = "status-val warn-val";
+        } else {
+            st.innerText = `TRỐNG ${dist}cm`;
+            st.className = "status-val";
+        }
+    }, 2000);
+    
+    // --- GALLERY LOGIC ---
+    window.openGallery = function() {
+        document.getElementById('gallery-modal').style.display = 'flex';
+        updateGalleryUI();
+    }
+    
+    window.closeGallery = function() {
+        document.getElementById('gallery-modal').style.display = 'none';
+    }
+
+    function updateGalleryUI() {
+        const img = document.getElementById('gallery-img');
+        const cnt = document.getElementById('gallery-count');
+        
+        if(galleryImages.length === 0) {
+            img.src = "";
+            img.alt = "Không có ảnh";
+            cnt.innerText = "0/0";
+            return;
+        }
+        
+        if(curImgIdx < 0) curImgIdx = 0;
+        if(curImgIdx >= galleryImages.length) curImgIdx = galleryImages.length - 1;
+        
+        img.src = galleryImages[curImgIdx];
+        cnt.innerText = `${curImgIdx + 1}/${galleryImages.length}`;
+    }
+    
+    window.navGallery = function(dir) {
+        if(galleryImages.length === 0) return;
+        curImgIdx += dir;
+        if(curImgIdx < 0) curImgIdx = 0;
+        if(curImgIdx >= galleryImages.length) curImgIdx = galleryImages.length - 1;
+        updateGalleryUI();
+    }
+    
+    function updateEventStatus(msg, color='#4ade80') {
+        const st = document.getElementById('st-event');
+        st.innerText = msg;
+        st.style.color = color;
+    }
+    
+    window.deleteImage = function() {
+        if(galleryImages.length === 0) return;
+        galleryImages.splice(curImgIdx, 1);
+        curImgIdx = Math.min(curImgIdx, galleryImages.length - 1);
+        updateGalleryUI();
+        showToast("ĐÃ XÓA ẢNH");
+        updateEventStatus("XÓA ẢNH: THÀNH CÔNG");
+    }
+    
+    window.sendImage = function() {
+        if(galleryImages.length === 0) return;
+        showToast("ĐANG GỬI...");
+        updateEventStatus("GỬI ẢNH: ĐANG XỬ LÝ...", '#fbbf24');
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/send_last_capture", true);
+        xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        xhr.onload = () => {
+            if(xhr.status === 200) {
+                showToast("GỬI THÀNH CÔNG");
+                updateEventStatus("GỬI ẢNH: THÀNH CÔNG");
+            }
+            else {
+                showToast("GỬI THẤT BẠI");
+                updateEventStatus("GỬI ẢNH: THẤT BẠI", '#ff3333');
+            }
+        };
+        xhr.send("");
+    }
+    
+    // Override doSnapshot to add to gallery
+    const oldSnap = window.doSnapshot;
+    window.doSnapshot = function() {
+        showToast("ĐANG CHỤP...");
+        updateEventStatus("CHỤP ẢNH: ĐANG XỬ LÝ...", '#fbbf24');
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/snapshot", true);
+        xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        xhr.onload = () => {
+            if(xhr.responseText.includes("SNAP_OK")) {
+                showToast("ĐÃ LƯU ẢNH");
+                updateEventStatus("CHỤP ẢNH: THÀNH CÔNG");
+                galleryImages.push("/preview.jpg?t=" + Date.now());
+                curImgIdx = galleryImages.length - 1;
+            }
+            else {
+                showToast("CHỤP THẤT BẠI");
+                updateEventStatus("CHỤP ẢNH: THẤT BẠI", '#ff3333');
+            }
+        };
+        xhr.send("");
+    }
+
+    window.toggleAuto = function() {
+        isAuto = !isAuto;
+        const btn = document.getElementById('btn-auto-toggle');
+        btn.innerText = isAuto ? "AUTO: BẬT" : "AUTO: TẮT";
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/auto", true);
+        xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        xhr.send("cmd=" + (isAuto ? "on" : "off"));
+        
+        showToast(isAuto ? "TỰ ĐỘNG LÁI: BẬT" : "CHẾ ĐỘ THỦ CÔNG", 1000);
+    };
+
+    // Speed Updates
+    window.updateSpeed = function(type, val) {
+        document.getElementById(`val-${type}`).innerText = val + "%";
+        if(type === 'man') {
+            motorSpeed = parseInt(val);
+            // Send update
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/motor", true);
+            xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+            xhr.send(`code=&speed=${val}`);
+        } else {
+            autoSpeed = parseInt(val);
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/auto_speed", true);
+            xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+            xhr.send(`speed=${val}`);
+        }
+    }
+    
+    // Bind slider events on load
+    setTimeout(() => {
+        const speedMan = document.getElementById('speed-man');
+        const speedAuto = document.getElementById('speed-auto');
+        if(speedMan) {
+            speedMan.addEventListener('input', (e) => updateSpeed('man', e.target.value));
+        }
+        if(speedAuto) {
+            speedAuto.addEventListener('change', (e) => updateSpeed('auto', e.target.value));
+        }
+    }, 100);
+
+    // --- API CALLS ---
+    let lastCmd = null;
+    
+    function sendMotorCmd(cmd) {
+        if (cmd === lastCmd) return; // Deduplicate
+        lastCmd = cmd;
+        
+        const statusMap = {
+            'forward': 'TIẾN',
+            'backward': 'LÙI',
+            'turnleft': 'TRÁI',
+            'turnright': 'PHẢI',
+            'stop': 'DỪNG'
+        };
+        
+        const st = document.getElementById('st-motor');
+        st.innerText = statusMap[cmd] || cmd.toUpperCase();
+        st.style.color = cmd === 'stop' ? '#888' : '#00e1ff';
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/motor", true);
+        xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        xhr.send(`code=${cmd}&speed=${motorSpeed}`);
+    }
+
+    function sendServo(pan, tilt) {
+        let dir = "GIỮA";
+        if(pan < 0) dir = "TRÁI";
+        if(pan > 0) dir = "PHẢI";
+        if(tilt < 0) dir = "LÊN";
+        if(tilt > 0) dir = "XUỐNG";
+        
+        document.getElementById('st-servo').innerText = dir;
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/servo", true);
+        xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        xhr.send(`pan=${pan}&tilt=${tilt}`);
+    }
+
+    // Init
+    window.onload = () => {
+        document.getElementById("cam").src = "/video?t=" + Date.now();
+    };
+
+  </script>
+</body>
+</html>
